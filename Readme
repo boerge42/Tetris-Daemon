@@ -1,0 +1,63 @@
+                     
+                MQTT-Tetris-Daemon
+                ==================
+                 Uwe Berger; 2018
+
+
+
+Tetris mal anders!
+
+Die Idee ist es, eine Tetris-Engine zu haben, an die man, ohne grosse
+Probleme, diverse/verschiedene Hard-/Software zur Eingabe und Ausgabe
+anschliessen kann. Die notwendigen Informationen zwischen den 
+einzelnen Komponenten werden ueber MQTT-Nachrichten ausgetauscht.
+
+Die Tetris-Engine (tetrisd) kann als Deamon gestartet werden.
+                   -------
+
+Zum Betrieb dieser Konstruktion ist ein laufender MQTT-Broker notwendig.
+
+
+Aufruf (tetrisd):
+=================
+
+tetrisd [-h <mqtt-host>]  --> MQTT-Broker      (default: localhost)
+        [-p <mqtt-port>]  --> MQTT-Port        (default: 1883)
+        [-U <mqtt-user>]  --> MQTT-User        (default: "")
+        [-P <mqtt-pwd>]   --> MQTT-Pwd         (default: "\")
+        [-q <mqtt-qos>]   --> MQTT-QoS         (default: 0)
+        [-i <mqtt-id>]    --> MQTT-Client-ID   (default: tetrisd)
+        [-d]              --> Start als Daemon (default: nein)
+        [-?]              --> Hilfe ausgeben
+
+
+MQTT-Topics:
+============
+  abonnierte Topics:
+  ------------------
+  tetris/key                  --> 1 --> Spielende (derzeit ohne Funktion)
+                              --> 2 --> Spielpause ein/aus
+                              --> 3 --> neues Spiel
+                              --> 4 --> Spielstein fallen lassen
+                              --> 5 --> Spielstein rotieren
+                              --> 6 --> Spielstein nach links
+                              --> 7 --> Spielstein nach rects
+
+  sendende Topics:
+  ----------------
+  tetris/score/time           \
+  tetris/score/level           \
+  tetris/score/bricks           > aktueller Spielstand
+  tetris/score/lines           /
+  tetris/score/points         /
+  tetris/gamestatus			  --> 0 (running), 1 (Pause), 2 (Game over)
+  tetris/finalscore           --> finaler Punktestand (in JSON)
+  teris/next_brick		      --> als 2d-Abbild
+  tetris/grid				  --> als 2d-Abbild
+  tetris/create_game_screen   --> 1 (leeres Spielfeld neu zeichnen)
+  tetris/destroy_game_screen  --> 1 (Spielfeld weg...)
+
+
+
+---------
+Have fun!

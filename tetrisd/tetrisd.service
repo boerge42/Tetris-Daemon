@@ -1,0 +1,9 @@
+[Unit]
+Description=Tetris Daemon
+
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/tetrisd -d
+
+[Install]
+WantedBy=multi-user.target
