@@ -1,3 +1,0 @@
-keyboard.o: keyboard.c mcurses.h mcurses-config.h timer.h
-mcurses.o: mcurses.c mcurses.h mcurses-config.h
-timer.o: timer.c timer.h

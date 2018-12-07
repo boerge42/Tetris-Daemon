@@ -1,2 +1,0 @@
-joystick.o: joystick.c my_mqtt.h
-my_mqtt.o: my_mqtt.c my_mqtt.h

@@ -1,3 +1,0 @@
-grid_score.o: grid_score.c mcurses.h mcurses-config.h my_mqtt.h
-mcurses.o: mcurses.c mcurses.h mcurses-config.h
-my_mqtt.o: my_mqtt.c my_mqtt.h
