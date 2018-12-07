@@ -30,9 +30,12 @@ tetrisd [-h <mqtt-host>]  --> MQTT-Broker      (default: localhost)
         [-d]              --> Start als Daemon (default: nein)
         [-?]              --> Hilfe ausgeben
 
+...I/O-Programme analog bzw. siehe Quelltext!
 
-MQTT-Topics:
-============
+
+MQTT-Topics (tetrisd):
+======================
+
   abonnierte Topics:
   ------------------
   tetris/key                  --> 1 --> Spielende (derzeit ohne Funktion)
@@ -58,6 +61,40 @@ MQTT-Topics:
   tetris/destroy_game_screen  --> 1 (Spielfeld weg...)
 
 
+$ tree -d
+=========
+.
+├── input
+│   ├── joystick			--> Eingabe via Joystick/Gamepad
+│   ├── keyboard			--> Eingabe via Keyboard
+│   └── wii_controller		--> Eingabe via WII-Controller (noch nicht fertig)
+├── output
+│   ├── hardware
+│   │   ├── max7219_test	--> Test MAX7219
+│   │   └── scoreboard		--> Scoreboard via MAX7219
+│   ├── tcltk
+│   │   └── grid			--> Grid & Score via Tcl/Tk
+│   └── terminal
+│       ├── grid			--> nur Grid in einem Terminal ausgeben
+│       ├── grid_score      --> Grid & Score in einem Terminal ausgeben
+│       └── score			--> nur Score in einem Terminal ausgeben
+└── tetrisd					--> die Tetris-Engine
+
+
+Voraussetzungen/Uebersetzen/Starten (Linux):
+============================================
+
+* C-Programme:
+  ** libmosquitto-dev muss installiert sein
+  ** make clean; make
+  ** entsprechendes Programm starten ...:-)
+* Tcl/Tk:
+  ** jeweiliges TCL/TK-Script muss ausführbar sein
+  ** ./<programmname> [Enter]
+  ** ...smile...
+* alle --> individuelle MQTT-Konfiguration kann jeweils ueber Aufruf-
+           parameter angegeben werden --> ...Quelltext... ;-) 
+  
 
 ---------
 Have fun!
