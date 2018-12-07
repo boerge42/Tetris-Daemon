@@ -1,0 +1,3 @@
+max7219.o: max7219.c max7219.h
+my_mqtt.o: my_mqtt.c my_mqtt.h
+scoreboard.o: scoreboard.c my_mqtt.h max7219.h

@@ -1,0 +1,5 @@
+my_mqtt.o: my_mqtt.c my_mqtt.h
+random.o: random.c random.h tetris.h
+tetris_io.o: tetris_io.c tetris_io.h tetris.h my_mqtt.h
+tetrisd.o: tetrisd.c timer.h tetris_io.h tetris.h my_mqtt.h random.h
+timer.o: timer.c timer.h
