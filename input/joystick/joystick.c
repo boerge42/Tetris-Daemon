@@ -19,6 +19,8 @@
   [-i <mqtt-id>]		"tetris_joystick"
   [-q <mqtt-qosr>] 		0
   [-v]			 		no
+  [-d]					no
+  [-?]					no
 
 
   ---------
@@ -48,13 +50,16 @@
 
 
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <syslog.h>
 
 #include "my_mqtt.h"
 
@@ -111,9 +116,50 @@ char mqtt_user[50]	= "";
 char mqtt_pwd[50]	= "";
 uint8_t mqtt_qos    = MQTT_QOS;
 char mqtt_id[50]    = MQTT_CLIENT_ID;
+uint8_t daemonize   = 0;
 uint8_t verbose     = 0;
 
 extern struct mosquitto *mosq;
+
+
+
+// ********************************************
+void signal_handler(int sig)
+{
+	switch(sig) {
+		case SIGHUP:
+			syslog(LOG_INFO, "...receive  SIGHUP, what's up?");
+			break;
+		case SIGTERM:
+			syslog(LOG_INFO, "Stopped with SIGTERM!");
+			// Aufraeumen...
+			mqtt_clear();
+			closelog();
+			exit(0);
+			break;
+	}
+}
+
+// ********************************************
+void start_daemon (void) 
+{
+	int i;
+	pid_t pid;
+   
+	// Elternprozess beenden, init uebernimmt
+	if ((pid = fork ()) != 0) exit(EXIT_FAILURE);
+	// Kindprozess uebernimmt
+	if (setsid() < 0) exit(EXIT_FAILURE);
+	// Kindprozess terminieren
+	if ((pid = fork()) != 0) exit(EXIT_FAILURE);
+	// Arbeitsverzeichnis "setzen" und Filezugriffsrechte setzen	
+	if (chdir("/tmp")) exit(EXIT_FAILURE);
+	umask(0);
+	// alle offenen Files schliessen
+	for (i = sysconf(_SC_OPEN_MAX); i>0; i--) close(i);
+}
+
+
 
 // ******************************************************
 // ******************************************************
@@ -124,11 +170,11 @@ int main(int argc, char **argv)
 	int fd;
 	uint8_t i, tetris_key;
 	int c;
-	char buf[2];
+	char buf[10];
 	
 	
 	// Aufrufparameter auslesen/verarbeiten
-	while ((c=getopt(argc, argv, "h:p:u:P:q:i:v?")) != -1) {
+	while ((c=getopt(argc, argv, "h:p:u:P:q:i:vd?")) != -1) {
 		switch (c) {
 			case 'h':
 				if (strlen(optarg) >= sizeof mqtt_host) {
@@ -170,6 +216,9 @@ int main(int argc, char **argv)
 					strncpy(mqtt_pwd, optarg, sizeof(mqtt_pwd));
 				}
 				break;
+			case 'd':
+				daemonize = 1;
+				break;
 			case 'v':
 				verbose = 1;
 				break;
@@ -180,11 +229,25 @@ int main(int argc, char **argv)
 				puts("         [-P <mqtt-pwd>]   --> MQTT-Pwd       (default: \"\")");
 				puts("         [-q <mqtt-qos>]   --> MQTT-QoS       (default: 0)");
 				puts("         [-i <mqtt-id>]    --> MQTT-Client-ID (default: tetrisd)");
+				puts("         [-d]              --> ..as daemon    (default: no)");
 				puts("         [-v]              --> verbose        (default: no)");
 				puts("         [-?]              --> print this...");
 				exit(0);
 				break;
 		}
+	}
+	
+	
+	// Programm daemonisieren
+	if (daemonize) {
+		// behandelte Signale initialisieren
+		signal(SIGTERM, signal_handler);
+		signal(SIGHUP, signal_handler);
+		// "daemonisieren"
+		start_daemon();
+		// syslog
+		openlog(argv[0], LOG_PID|LOG_CONS, LOG_DAEMON);
+		syslog(LOG_INFO, "Started...!");
 	}
 	
 	// MQTT initialisieren
@@ -193,18 +256,28 @@ int main(int argc, char **argv)
     // Joystick-Device oeffnen
     fd = open (JS_DEVICE, O_RDONLY);
     if( fd < 0 ) {
-        if (verbose) printf("Cannot open: %s\n", JS_DEVICE);
+        if (!daemonize) {
+			printf("Cannot open: %s\n", JS_DEVICE);
+		} else {
+			syslog(LOG_INFO, "Error by open() joystick-device!");
+		}
         exit(EXIT_FAILURE);
     }
 
     // loop forever...
     while( 1 )     {
         // Einlesen
-        read(fd, &e, sizeof(e));
-        
-        // Tetristaste bestimmen, wenn Type Button oder Axis
-       	if( e.type == JS_EVENT_BUTTON || e.type == JS_EVENT_AXIS ) {
-			
+        if (read(fd, &e, sizeof(e)) < 0) {
+			if (!daemonize) {
+				printf("Error %d by read() %s\n", errno, JS_DEVICE);
+			} else {
+				syslog(LOG_INFO, "Error by read() joystick-device!");
+			}
+			exit(EXIT_FAILURE);
+		}
+		// Tetristaste bestimmen, wenn Type Button oder Axis
+		if( e.type == JS_EVENT_BUTTON || e.type == JS_EVENT_AXIS ) {
+		
 			i=0;
 			tetris_key = KEY_UNKNOWN;
 			while (i < SIZEOF_TETRIS_BUTTONS && tetris_key == KEY_UNKNOWN) {
@@ -216,22 +289,21 @@ int main(int argc, char **argv)
 				i++;
 			}
 			// wenn eine Tetris-Taste, dann via MQTT senden
-	        if (tetris_key != KEY_UNKNOWN) {
+			if (tetris_key != KEY_UNKNOWN) {
 				sprintf(buf, "%d", tetris_key);
 				mosquitto_error_handling(
 					mosquitto_publish(mosq, 
-									  NULL, 
-									  MQTT_TOPIC_KEY, 
-									  strlen(buf), 
-									  buf, 
-									  mqtt_qos, 
-									  false));
+									NULL, 
+									MQTT_TOPIC_KEY, 
+									strlen(buf), 
+									buf, 
+									mqtt_qos, 
+									false));
 			}
-	        
-	        // evtl. Debugausgabe
-	        if (verbose) printf("Type: %d, Number: %d, Value; %d, Tetris: %d\n", 
-	                            e.type, e.number, e.value, tetris_key);
-	    }
+			// evtl. Debugausgabe (Joysticktaste)
+			if (verbose && !daemonize) printf("Type: %d, Number: %d, Value; %d, Tetris: %d\n", 
+								e.type, e.number, e.value, tetris_key);
+		}
     }
 	mqtt_clear();
     return 0;

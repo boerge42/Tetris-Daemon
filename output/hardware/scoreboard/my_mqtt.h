@@ -53,11 +53,15 @@
 #define MQTT_TOPIC_SCORE_LINES "tetris/score/lines"
 #define MQTT_TOPIC_SCORE_POINTS "tetris/score/points"
 #define MQTT_TOPIC_GAME_STATUS "tetris/gamestatus"
+#define MQTT_TOPIC_CREATE_GAME "tetris/create_game_screen"
+#define MQTT_TOPIC_GET_SCORE "tetris/get_score"
 #define MQTT_TOPIC_ALTERNATIV "scoreboard/alternative" 
 
 
 int mosquitto_error_handling(int error);
 void mqtt_init(char *host, int port, char *user, char *pwd, uint8_t qos, char *id);
+void mqtt_get_score(uint8_t qos);
+void mqtt_loop_forever(void);
 void mqtt_clear(void);
 
 #endif

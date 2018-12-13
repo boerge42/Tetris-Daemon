@@ -192,6 +192,9 @@ int main(int argc, char **argv)
 	mvaddstr(10, 1, "Time [s]:");
 	mvaddstr(15, 1, "'q' --> Exit");
 
+	// aktuellen Speilstand etc. anfordern
+	mqtt_get_score(mqtt_qos);
+
 	// Loop (mit getch()), bis Taste q betaetigt...
 	while (c != 'q') c = getch();
 

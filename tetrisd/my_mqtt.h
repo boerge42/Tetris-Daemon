@@ -59,6 +59,7 @@
 #define MQTT_TOPIC_CREATE_GAME_SCREEN 	"tetris/create_game_screen"
 #define MQTT_TOPIC_DESTROY_GAME_SCREEN	"tetris/destroy_game_screen"
 #define MQTT_TOPIC_GRID					"tetris/grid"
+#define MQTT_TOPIC_GET_SCORE			"tetris/get_score"
 
 int mosquitto_error_handling(int error);
 void mqtt_init(char *host, int port, char *user, char *pwd, uint8_t qos, char *id);

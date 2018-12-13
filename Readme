@@ -30,7 +30,7 @@ tetrisd [-h <mqtt-host>]  --> MQTT-Broker      (default: localhost)
         [-d]              --> Start als Daemon (default: nein)
         [-?]              --> Hilfe ausgeben
 
-...I/O-Programme analog bzw. siehe Quelltext!
+...I/O-Programme analog bzw. siehe Quelltext ;-)!
 
 
 MQTT-Topics (tetrisd):
@@ -45,6 +45,8 @@ MQTT-Topics (tetrisd):
                               --> 5 --> Spielstein rotieren
                               --> 6 --> Spielstein nach links
                               --> 7 --> Spielstein nach rects
+  tetris/get_score            --> 1 (Spielstand, Grid etc. anfordern)
+
 
   sendende Topics:
   ----------------
@@ -95,6 +97,17 @@ Voraussetzungen/Uebersetzen/Starten (Linux):
 * alle --> individuelle MQTT-Konfiguration kann jeweils ueber Aufruf-
            parameter angegeben werden --> ...Quelltext... ;-) 
   
+
+Service-Scripts:
+================
+
+* batch_make.sh: make-Kommando in allen Unterverzeichnissen ausfuheren,
+                 wenn ein Makefile gefunden wurde; der Target wird als
+                 Kommandozeilenparameter dem Script mitgegeben
+              
+* start_tetris.sh: ... 
+
+
 
 ---------
 Have fun!

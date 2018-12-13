@@ -34,6 +34,7 @@
 
 extern struct mosquitto *mosq;
 extern uint8_t mqtt_qos;
+extern uint8_t get_score;
 
 
 
@@ -60,7 +61,7 @@ void score2mqtt(score_t *s)
 	char buf[200];
 	
 	//...Zeit liegt in 100tel Sekunden vor
-	sprintf(buf, "%u,%02u", (unsigned int)(s->game_time/100), (unsigned int)(s->game_time%100));
+	sprintf(buf, "%u.%02u", (unsigned int)(s->game_time/100), (unsigned int)(s->game_time%100));
 	mosquitto_error_handling( mosquitto_publish(mosq, NULL, MQTT_TOPIC_SCORE_TIME, strlen(buf), buf, mqtt_qos, false));
 	// Level
 	sprintf(buf, "%u", s->level);
@@ -85,7 +86,7 @@ void score2mqtt(score_t *s)
 	}
 	mosquitto_error_handling( mosquitto_publish(mosq, NULL, MQTT_TOPIC_GAME_STATUS, strlen(buf), buf, mqtt_qos, false));
 	// wenn Spiel zuende, dann Endstand versenden
-	if (s->game_over) {
+	if (s->game_over && !get_score) {
 		sprintf(buf,
 		 		"{\"timestamp\":\"%lu\", \"time\":\"%lu\", \"level\":\"%u\", \"bricks\":\"%u\", \"lines\":\"%u\", \"points\":\"%u\"}",
 		  		time(NULL), s->game_time, s->level, s->bricks,

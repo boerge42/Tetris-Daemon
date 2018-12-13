@@ -101,6 +101,7 @@ void mqtt_init(char *host, int port, char *user, char *pwd, uint8_t qos, char *i
     mosquitto_error_handling(mosquitto_connect_async(mosq, host, port, MQTT_KEEPALIVE));
 	// Topics abbonieren
 	mosquitto_error_handling(mosquitto_subscribe(mosq, NULL, MQTT_TOPIC_KEY, qos));
+	mosquitto_error_handling(mosquitto_subscribe(mosq, NULL, MQTT_TOPIC_GET_SCORE, qos));
 	// MQTT-Loop starten
 	mosquitto_loop_start(mosq);
 }

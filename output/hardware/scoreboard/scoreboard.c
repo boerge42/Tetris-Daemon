@@ -20,6 +20,10 @@
 #include <mosquitto.h>
 #include <wiringPi.h>
 
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <syslog.h>
 
 #include "my_mqtt.h"
 #include "max7219.h"
@@ -27,6 +31,42 @@
 #define DISPLAY_COUNT 3
 #define SPI_CHANNEL   0
 
+
+// ********************************************
+void signal_handler(int sig)
+{
+	switch(sig) {
+		case SIGHUP:
+			syslog(LOG_INFO, "...receive  SIGHUP, what's up?");
+			break;
+		case SIGTERM:
+			syslog(LOG_INFO, "Stopped with SIGTERM!");
+			// Aufraeumen...
+			mqtt_clear();
+			closelog();
+			exit(0);
+			break;
+	}
+}
+
+// ********************************************
+void start_daemon (void) 
+{
+	int i;
+	pid_t pid;
+   
+	// Elternprozess beenden, init uebernimmt
+	if ((pid = fork ()) != 0) exit(EXIT_FAILURE);
+	// Kindprozess uebernimmt
+	if (setsid() < 0) exit(EXIT_FAILURE);
+	// Kindprozess terminieren
+	if ((pid = fork()) != 0) exit(EXIT_FAILURE);
+	// Arbeitsverzeichnis "setzen" und Filezugriffsrechte setzen	
+	if (chdir("/tmp")) exit(EXIT_FAILURE);
+	umask(0);
+	// alle offenen Files schliessen
+	for (i = sysconf(_SC_OPEN_MAX); i>0; i--) close(i);
+}
 
 // ********************************************************************
 void mqtt_scoreboard_callback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message)
@@ -36,63 +76,55 @@ void mqtt_scoreboard_callback(struct mosquitto *mosq, void *userdata, const stru
     char buf[DISPLAY_COUNT*8+1];
     uint8_t i = 0;
 	
-	static uint16_t level = 0;
-	static uint16_t bricks = 0;
-	static uint16_t lines = 0;
-	static uint32_t points = 0;
-	static uint32_t time = 0;
-	static uint16_t  gamestatus = 0;
-	
-	//printf("%s --> %s\n", message->topic, (char *)message->payload);
-
     mosquitto_error_handling(mosquitto_sub_topic_tokenise(message->topic, &topics, &topic_count));
     
     if (strcmp(topics[0], "tetris") == 0) {
     
 	    if (strcmp(topics[topic_count-1], "level") == 0) {
-			if (atoi(message->payload)<10 && atoi(message->payload) > -1) 
-				level = atoi(message->payload);
+			if (atoi(message->payload)<10 && atoi(message->payload) > -1) {
+				max7219_display_value(1, 7, atoi(message->payload), -1);
+			}
 		}
 		if (strcmp(topics[topic_count-1], "bricks") == 0) {
-			if (atoi(message->payload)<1000 && atoi(message->payload) > -1) 
-				bricks = atoi(message->payload);
+			if (atoi(message->payload)<1000 && atoi(message->payload) > -1) {
+				max7219_display_value(2, 4, atoi(message->payload), -1);
+			}
 		}
    	 	if (strcmp(topics[topic_count-1], "lines") == 0) {
-			if (atoi(message->payload)<1000 && atoi(message->payload) > -1) 
-				lines = atoi(message->payload);
+			if (atoi(message->payload)<1000 && atoi(message->payload) > -1) {
+				max7219_display_value(2, 0, atoi(message->payload), -1);
+			}
 		}
     	if (strcmp(topics[topic_count-1], "points") == 0) {
-			if (atoi(message->payload)<1000000 && atoi(message->payload) > -1) 
-				points = atol(message->payload);
+			if (atoi(message->payload)<1000000 && atoi(message->payload) > -1) {
+				max7219_display_value(0, 0, atol(message->payload), -1);
+			}
 		}
     	if (strcmp(topics[topic_count-1], "time") == 0) {
-			if (atof(message->payload)<10000.00 && atoi(message->payload) >= 0.0) 
-				time = atof(message->payload)*100;
+			if (atof(message->payload)<10000.00 && atoi(message->payload) >= 0.0) {
+				max7219_display_value(1, 0, atof(message->payload)*100, 2);
+			}
 		}
     	if (strcmp(topics[topic_count-1], "gamestatus") == 0) {
-			gamestatus = atoi(message->payload);
+	    	switch (atoi(message->payload)) {
+				case 1:
+					// Pause --> 'P'
+					max7219_send_data(0, REG_ADDR_DIGIT7, 0xE);
+					break;
+				case 2:
+					// Spielende --> 'E'
+					max7219_send_data(0, REG_ADDR_DIGIT7, 0xB);
+					break;	
+				default:
+					max7219_send_data(0, REG_ADDR_DIGIT7, CHAR_BLANK);
+					break;						
+			}
 		}
-    
-    	// ...und ausgeben
-    	max7219_clear_all();
-    	switch (gamestatus) {
-			case 1:
-				// Pause --> 'P'
-				max7219_send_data(0, REG_ADDR_DIGIT7, 0xE);
-				break;
-			case 2:
-				// Spielende --> 'E'
-				max7219_send_data(0, REG_ADDR_DIGIT7, 0xB);
-				break;		
+
+    	if (strcmp(topics[topic_count-1], "create_game_screen") == 0) {
+			max7219_clear_all();
 		}
-   		max7219_display_value(0, 0, points, -1);
-    	max7219_display_value(1, 7, level, -1);
-    	max7219_display_value(1, 0, time, 2);
-    	max7219_display_value(2, 4, bricks, -1);
-    	max7219_display_value(2, 0, lines, -1);
-    
 	}
-	
 	
 	if (strcmp(topics[0], "scoreboard") == 0) {
 		memset(buf, 0, DISPLAY_COUNT*8+1);
@@ -113,11 +145,7 @@ void mqtt_scoreboard_callback(struct mosquitto *mosq, void *userdata, const stru
 		}
 	}
 
-
     mosquitto_error_handling(mosquitto_sub_topic_tokens_free(&topics, topic_count));
-
-
-
 }
 
 
@@ -134,9 +162,10 @@ int main(int argc, char **argv)
 	char mqtt_pwd[50]	= "";
 	uint8_t mqtt_qos    = MQTT_QOS;
 	char mqtt_id[50]    = MQTT_CLIENT_ID;
+	uint8_t daemonize   = 0;
 
 	// Aufrufparameter auslesen/verarbeiten
-	while ((c=getopt(argc, argv, "h:p:u:P:q:i:?")) != -1) {
+	while ((c=getopt(argc, argv, "h:p:u:P:q:i:d?")) != -1) {
 		switch (c) {
 			case 'h':
 				if (strlen(optarg) >= sizeof mqtt_host) {
@@ -178,16 +207,31 @@ int main(int argc, char **argv)
 					strncpy(mqtt_id, optarg, sizeof(mqtt_id));
 				}
 				break;
+			case 'd':
+				daemonize = 1;
+				break;
 			case '?':
 				puts("score [-h <mqtt-host>] [-p <mqtt-port>]");
 				puts("      [-U <mqtt-user>] [-P <mqtt-pwd>]");
 				puts("      [-q <mqtt-qosr>] [-i <mqtt-id>]");
+				puts("      [-d -?]");
 				exit(0);
 				break;
 		}
 	}
 
-
+	// Programm daemonisieren
+	if (daemonize) {
+		// behandelte Signale initialisieren
+		signal(SIGTERM, signal_handler);
+		signal(SIGHUP, signal_handler);
+		// "daemonisieren"
+		start_daemon();
+		// syslog
+		openlog(argv[0], LOG_PID|LOG_CONS, LOG_DAEMON);
+		syslog(LOG_INFO, "Started...!");
+	}
+	
 	// WiringPi init (allein fuer SPI nicht noetig, aber wer weiss, was noch kommt ;-)
 	wiringPiSetup();
 	
@@ -203,10 +247,14 @@ int main(int argc, char **argv)
 
 	// MQTT initialisieren
 	mqtt_init(mqtt_host, mqtt_port, mqtt_user, mqtt_pwd, mqtt_qos, mqtt_id);
+
+	// aktuellen Spielstand etc. anfordern
+	mqtt_get_score(mqtt_qos);
 	
-	// Loop (...bis Taste q betaetigt...)
-	while (getchar() == 'q') {
-	}
+	// Loop...
+	//while (getchar() == 'Q') {
+	//}
+	mqtt_loop_forever();
 
 	return 0;
 }

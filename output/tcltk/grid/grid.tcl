@@ -21,14 +21,14 @@
 # *******************************************************************
 
 #!/bin/sh
-# the next line restarts using wish\
+# the next line restarts using wish \
 exec wish "$0" "$@"
 
 # thanks: https://chiselapp.com/user/schelte/repository/mqtt/home
 source  mqtt.tcl
 
 # Geometrie
-set gvar(bx)    			25
+set gvar(bx)    			40
 set gvar(by)    			$gvar(bx)
 set gvar(border) 			2
 set gvar(fx)				10
@@ -43,12 +43,13 @@ set gvar(dx) [expr ($gvar(bx) * $gvar(fx)) + ($gvar(border) * ($gvar(fx)+1))]
 set gvar(dy) [expr ($gvar(by) * $gvar(fy)) + ($gvar(border) * ($gvar(fy)+1))]
 
 # Farbdefinitionen
-set gvar(colors) {gray10 green blue yellow red brown magenta cyan}
+set gvar(colors) {gray10 green darkblue yellow red brown magenta cyan}
 set gvar(bg_color_score) 	lightgrey
 
 
 # Fonts
-set gvar(score_label_font_size) 12
+set gvar(score_label_font)	{-size 8}
+set gvar(score_font) 		{-size 18}
 
 # Topics 
 set topic_grid 			"tetris/grid"
@@ -59,6 +60,7 @@ set topic_time 			"tetris/score/time"
 set topic_lines 		"tetris/score/lines"
 set topic_bricks 		"tetris/score/bricks"
 set topic_gamestatus 	"tetris/gamestatus"
+set topic_get_score 	"tetris/get_score"
 
 
 # ********************************************************************
@@ -80,11 +82,11 @@ proc getopt {_argv name {_var ""} {default ""}} {
 
 
 # ********************************************************************
-proc set_brick_color {id c} {
-	global gvar
-	.grid itemconfigure b$id -fill [lindex $gvar(colors) $c]
-	.grid itemconfigure b$id -outline [lindex $gvar(colors) $c]
-}
+#proc set_brick_color {id c} {
+#	global gvar
+#	.grid itemconfigure b$id -fill [lindex $gvar(colors) $c]
+#	.grid itemconfigure b$id -outline [lindex $gvar(colors) $c]
+#}
 
 
 # ********************************************************************
@@ -212,37 +214,37 @@ proc gui_init {} {
 	}
 
 	# Level
-	label .score.l_level -text "Level:" -font {-size 11}
+	label .score.l_level -text "Level:" -font $gvar(score_label_font)
 	grid .score.l_level -column 0 -row 1 -pady $gvar(score_pady) -sticky sw
-	label .score.level -text "" -font {-size 18}
+	label .score.level -text "" -font $gvar(score_font)
 	grid .score.level -column 1 -row 1 -pady $gvar(score_pady) -sticky e
 
 	# Points
-	label .score.l_points -text "Points:" -font {-size 11}
+	label .score.l_points -text "Points:" -font $gvar(score_label_font)
 	grid .score.l_points -column 0 -row 2 -pady $gvar(score_pady) -sticky sw
-	label .score.points -text "" -font {-size 18}
+	label .score.points -text "" -font $gvar(score_font)
 	grid .score.points -column 1 -row 2 -pady $gvar(score_pady) -sticky e
 
 	# Time
-	label .score.l_time -text "Time:" -font {-size 11}
+	label .score.l_time -text "Time:" -font $gvar(score_label_font)
 	grid .score.l_time -column 0 -row 3 -pady $gvar(score_pady) -sticky sw
-	label .score.time -text "" -font {-size 18}
+	label .score.time -text "" -font $gvar(score_font)
 	grid .score.time -column 1 -row 3 -pady $gvar(score_pady) -sticky e
 
 	# Lines
-	label .score.l_lines -text "Lines:" -font {-size 11}
+	label .score.l_lines -text "Lines:" -font $gvar(score_label_font)
 	grid .score.l_lines -column 0 -row 4 -pady $gvar(score_pady) -sticky sw
-	label .score.lines -text "" -font {-size 18}
+	label .score.lines -text "" -font $gvar(score_font)
 	grid .score.lines -column 1 -row 4 -pady $gvar(score_pady) -sticky e
 
 	# Bricks
-	label .score.l_bricks -text "Bricks:" -font {-size 11}
+	label .score.l_bricks -text "Bricks:" -font $gvar(score_label_font)
 	grid .score.l_bricks -column 0 -row 5 -pady $gvar(score_pady) -sticky sw
-	label .score.bricks -text "" -font {-size 18}
+	label .score.bricks -text "" -font $gvar(score_font)
 	grid .score.bricks -column 1 -row 5 -pady $gvar(score_pady) -sticky e
 
 	# Gamestatus
-	label .score.gamestatus -text "" -font {-size 18}
+	label .score.gamestatus -text "" -font $gvar(score_font)
 	grid .score.gamestatus -column 0 -row 6 -columnspan 2 -pady $gvar(score_pady)
 }
 
@@ -257,9 +259,8 @@ getopt argv --U user 		""
 getopt argv --P pwd  		""
 getopt argv --i client_id   	"tcl_grid"
 getopt argv --q qos 			0
-#
+
 # ...und/oder Plausibilitaet bzw. Wertebereiche ...
-#
 if {$qos < 0} {set qos 0}
 if {$qos > 1} {set qos 1}
 
@@ -275,6 +276,9 @@ $client_sub subscribe $topic_time callback_mqtt_sub_time $qos
 $client_sub subscribe $topic_lines callback_mqtt_sub_lines $qos
 $client_sub subscribe $topic_bricks callback_mqtt_sub_bricks $qos
 $client_sub subscribe $topic_gamestatus callback_mqtt_sub_gamestatus $qos
+
+# ...und Score via MQTT "anfordern"
+$client_sub publish $topic_get_score "1" $qos
 
 # GUI initialisieren
 gui_init

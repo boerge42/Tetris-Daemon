@@ -98,6 +98,12 @@ void mqtt_init(char *host, int port, char *user, char *pwd, uint8_t qos, char *i
 }
 
 // ************************************************
+void mqtt_get_score(uint8_t qos)
+{
+	mosquitto_error_handling(mosquitto_publish(mosq, NULL, MQTT_TOPIC_GET_SCORE, 2, "1", qos, false));
+}
+
+// ************************************************
 void mqtt_clear(void)
 {
 	mosquitto_disconnect(mosq);

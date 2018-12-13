@@ -230,6 +230,9 @@ int main(int argc, char **argv)
 	mvaddstr(0,0, "Tetris-Grid; Uwe Berger; 2018");
 	attrset(A_NORMAL);
 
+	// aktuellen Speilstand etc. anfordern
+	mqtt_get_score(mqtt_qos);
+
 	// Loop (mit getch()), bis Taste q betaetigt...
 	while (c != 'q') c = getch();
 

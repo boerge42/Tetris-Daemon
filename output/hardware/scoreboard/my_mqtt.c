@@ -93,10 +93,24 @@ void mqtt_init(char *host, int port, char *user, char *pwd, uint8_t qos, char *i
 	mosquitto_error_handling(mosquitto_subscribe(mosq, NULL, MQTT_TOPIC_SCORE_LINES, qos));
 	mosquitto_error_handling(mosquitto_subscribe(mosq, NULL, MQTT_TOPIC_SCORE_POINTS, qos));
 	mosquitto_error_handling(mosquitto_subscribe(mosq, NULL, MQTT_TOPIC_GAME_STATUS, qos));
+	mosquitto_error_handling(mosquitto_subscribe(mosq, NULL, MQTT_TOPIC_CREATE_GAME, qos));
 	mosquitto_error_handling(mosquitto_subscribe(mosq, NULL, MQTT_TOPIC_ALTERNATIV, qos));
 	// MQTT-Loop starten
-	mosquitto_loop_start(mosq);
+	//mosquitto_loop_start(mosq);
 }
+
+// ************************************************
+void mqtt_get_score(uint8_t qos)
+{
+	mosquitto_error_handling(mosquitto_publish(mosq, NULL, MQTT_TOPIC_GET_SCORE, 2, "1", qos, false));
+}
+
+// ************************************************
+void mqtt_loop_forever(void)
+{
+	mosquitto_error_handling(mosquitto_loop_forever(mosq, 1, 1));
+}
+
 
 // ************************************************
 void mqtt_clear(void)

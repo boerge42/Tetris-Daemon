@@ -91,6 +91,8 @@ uint8_t mqtt_qos    = MQTT_QOS;
 char mqtt_id[50]    = MQTT_CLIENT_ID;
 uint8_t daemonize   = 0;
 
+uint8_t get_score	= 0;
+
 
 // ********************************************
 void timer_handler(void) 
@@ -309,68 +311,80 @@ void mqtt_key_callback(struct mosquitto *mosq, void *userdata, const struct mosq
 
 	brick_t newbrick;
 
-	// Tastensteuerung		
-	switch (atoi(message->payload)) {
-		// Spielende
-		case KEY_QUIT_GAME:
-				//run=0;
-				break;
-		// neues Spiel
-		case KEY_NEW_GAME:
-				game_init();
-				create_game_screen();
-				break;
-		// Spielpause
-		case KEY_PAUSE_GAME:
-				if (score.is_pause) {
-					score.is_pause=0;
-					start_timer(compute_iteration_time(&score), &timer_handler);
-				} else {
-					score.is_pause=1;
+    if (strcmp(message->topic, MQTT_TOPIC_GET_SCORE) == 0) {
+		// aktuellen Spielstand angefordert
+		get_score = 1;
+		create_game_screen();
+		draw_score(&score);
+		get_score = 0;
+		draw_grid(&grid);
+		draw_next_brick(&next_brick);
+	} else {
+		// Tastensteuerung		
+		switch (atoi(message->payload)) {
+			// Spielende
+			case KEY_QUIT_GAME:
+					//run=0;
+					break;
+			// neues Spiel
+			case KEY_NEW_GAME:
+					game_init();
+					create_game_screen();
+					break;
+			// Spielpause
+			case KEY_PAUSE_GAME:
+					if (!score.game_over) {
+						if (score.is_pause) {
+							score.is_pause=0;
+							start_timer(compute_iteration_time(&score), &timer_handler);
+						} else {
+							score.is_pause=1;
+							stop_timer();
+						}
+					}
+					draw_score(&score);
+					break;
+			// Spielstein drehen
+			case KEY_BRICK_ROTATE:
+					if (score.is_pause || score.game_over) break;
+					newbrick=rotate_brick_cw(brick);
+					if (!collision(&newbrick, &grid)) {
+						clear_brick(&brick);
+						draw_brick(&newbrick, &grid);
+						brick=newbrick;
+					}
+					break;
+			// Spielstein runterfallen lassen
+			case KEY_BRICK_DROP:
+					if (score.is_pause || score.game_over) break;
 					stop_timer();
-				}
-				draw_score(&score);
-				break;
-		// Spielstein drehen
-		case KEY_BRICK_ROTATE:
-				if (score.is_pause || score.game_over) break;
-				newbrick=rotate_brick_cw(brick);
-				if (!collision(&newbrick, &grid)) {
-					clear_brick(&brick);
-					draw_brick(&newbrick, &grid);
-					brick=newbrick;
-				}
-				break;
-		// Spielstein runterfallen lassen
-		case KEY_BRICK_DROP:
-				if (score.is_pause || score.game_over) break;
-				stop_timer();
-				drop_key_pressed=1;
-				// Schnelldurchlauf
-				start_timer(5, &timer_handler);
-				break;
-		// Spielstein nach links
-		case KEY_BRICK_LEFT:
-				if (score.is_pause || score.game_over) break;
-				newbrick=brick;
-				newbrick.x--;
-				if (!collision(&newbrick, &grid)) {
-					clear_brick(&brick);
-					draw_brick(&newbrick, &grid);
-					brick=newbrick;											
-				};
-				break;
-		// Spielstein nach rechts
-		case KEY_BRICK_RIGHT:
-				if (score.is_pause || score.game_over) break;
-				newbrick=brick;
-				newbrick.x++;
-				if (!collision(&newbrick, &grid)) {
-					clear_brick(&brick);
-					draw_brick(&newbrick, &grid);
-					brick=newbrick;											
-				};
-				break;
+					drop_key_pressed=1;
+					// Schnelldurchlauf
+					start_timer(5, &timer_handler);
+					break;
+			// Spielstein nach links
+			case KEY_BRICK_LEFT:
+					if (score.is_pause || score.game_over) break;
+					newbrick=brick;
+					newbrick.x--;
+					if (!collision(&newbrick, &grid)) {
+						clear_brick(&brick);
+						draw_brick(&newbrick, &grid);
+						brick=newbrick;											
+					};
+					break;
+			// Spielstein nach rechts
+			case KEY_BRICK_RIGHT:
+					if (score.is_pause || score.game_over) break;
+					newbrick=brick;
+					newbrick.x++;
+					if (!collision(&newbrick, &grid)) {
+						clear_brick(&brick);
+						draw_brick(&newbrick, &grid);
+						brick=newbrick;											
+					};
+					break;
+		}
 	}
 }
 
