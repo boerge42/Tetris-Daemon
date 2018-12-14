@@ -49,10 +49,13 @@
 
 // MQTT-Topics
 #define MQTT_TOPIC_KEY	"tetris/key"
+#define MQTT_TOPIC_LWT	"tetris/status/joystick"
 
 
 int mosquitto_error_handling(int error);
 void mqtt_init(char *host, int port, char *user, char *pwd, uint8_t qos, char *id);
 void mqtt_clear(void);
+void mqtt_set_lwt_topic_off(uint8_t qos);
+
 
 #endif

@@ -132,6 +132,8 @@ void signal_handler(int sig)
 			break;
 		case SIGTERM:
 			syslog(LOG_INFO, "Stopped with SIGTERM!");
+			// LWT-Topic auf off
+			mqtt_set_lwt_topic_off(mqtt_qos);
 			// Aufraeumen...
 			mqtt_clear();
 			closelog();

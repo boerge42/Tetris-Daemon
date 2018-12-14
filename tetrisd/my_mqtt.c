@@ -97,6 +97,8 @@ void mqtt_init(char *host, int port, char *user, char *pwd, uint8_t qos, char *i
 	mosquitto_error_handling(mosquitto_username_pw_set(mosq, user, pwd));
 	// Subscribe-Callback setzen
 	mosquitto_message_callback_set(mosq, mqtt_key_callback);
+	// LWT konfigurieren
+    mosquitto_error_handling(mosquitto_will_set(mosq, MQTT_TOPIC_LWT, 2, "0", qos, true));
 	// mit MQTT-Broker verbinden
     mosquitto_error_handling(mosquitto_connect_async(mosq, host, port, MQTT_KEEPALIVE));
 	// Topics abbonieren
@@ -104,7 +106,16 @@ void mqtt_init(char *host, int port, char *user, char *pwd, uint8_t qos, char *i
 	mosquitto_error_handling(mosquitto_subscribe(mosq, NULL, MQTT_TOPIC_GET_SCORE, qos));
 	// MQTT-Loop starten
 	mosquitto_loop_start(mosq);
+	// LWT-Topic initial setzen
+	mosquitto_error_handling(mosquitto_publish(mosq, NULL, MQTT_TOPIC_LWT, 2, "1", qos, true));
 }
+
+// ************************************************
+void mqtt_set_lwt_topic_off(uint8_t qos)
+{
+	mosquitto_error_handling(mosquitto_publish(mosq, NULL, MQTT_TOPIC_LWT, 2, "0", qos, true));	
+}
+
 
 // ************************************************
 void mqtt_clear(void)

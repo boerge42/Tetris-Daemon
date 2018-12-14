@@ -55,6 +55,7 @@
 #define MQTT_TOPIC_GAME_STATUS "tetris/gamestatus"
 #define MQTT_TOPIC_CREATE_GAME "tetris/create_game_screen"
 #define MQTT_TOPIC_GET_SCORE "tetris/get_score"
+#define MQTT_TOPIC_LWT		 "tetris/status/scoreboard"
 #define MQTT_TOPIC_ALTERNATIV "scoreboard/alternative" 
 
 
@@ -63,5 +64,6 @@ void mqtt_init(char *host, int port, char *user, char *pwd, uint8_t qos, char *i
 void mqtt_get_score(uint8_t qos);
 void mqtt_loop_forever(void);
 void mqtt_clear(void);
+void mqtt_set_lwt_topic_off(uint8_t qos);
 
 #endif

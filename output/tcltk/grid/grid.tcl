@@ -61,6 +61,7 @@ set topic_lines 		"tetris/score/lines"
 set topic_bricks 		"tetris/score/bricks"
 set topic_gamestatus 	"tetris/gamestatus"
 set topic_get_score 	"tetris/get_score"
+set topic_status_progs	"tetris/status/#"
 
 
 # ********************************************************************
@@ -159,6 +160,43 @@ proc callback_mqtt_sub_gamestatus {t p} {
 	}
 }
 
+# **********************************************************************
+# ...war besoffen, aber scheint zu funktionieren...:-)...; kann man 
+# bestimmt noch optimieren!
+#
+proc callback_mqtt_sub_status_progs {t p} {
+	global gvar
+	# Topic in ListBox suchen
+	set found 0
+	set idx   0
+	set l_idx 0
+	set l [.score.lf.progs get 0 end]
+	foreach e $l {
+		if {[string compare $t $e] == 0} {
+			set found 1
+			set l_idx $idx
+		}
+		incr idx
+	}
+	# ...und?
+	if {!$found} {
+		# ...nicht gefunden, also einfuegen (...und Farbe entspr. setzen)
+		.score.lf.progs insert end "$t"
+		if {![string compare -length 1 $p "1"]} {
+			.score.lf.progs itemconfigure end -background lightgreen -selectbackground lightgreen
+		} else {
+			.score.lf.progs itemconfigure end -background red -selectbackground red		
+		}
+	} else {
+		# ...gefunden (...und Farbe entspr. setzen)
+		if {![string compare -length 1 $p "1"]} {
+			.score.lf.progs itemconfigure $l_idx -background lightgreen -selectbackground lightgreen
+		} else {
+			.score.lf.progs itemconfigure $l_idx -background red -selectbackground red		
+		}		
+	}
+}
+
 # ********************************************************************
 proc gui_init {} {
 	global gvar
@@ -246,6 +284,14 @@ proc gui_init {} {
 	# Gamestatus
 	label .score.gamestatus -text "" -font $gvar(score_font)
 	grid .score.gamestatus -column 0 -row 6 -columnspan 2 -pady $gvar(score_pady)
+
+	# Programmstatus
+	labelframe .score.lf -text " Status programms: " 
+	grid .score.lf -column 0 -row 7 -columnspan 2 -pady 30
+	listbox .score.lf.progs -height 5 -width 35 -justify center
+	# bind .score.lf.progs {.score.lf.progs selection clear 0 end}
+	pack .score.lf.progs -pady 2 -padx 2
+
 }
 
 # ********************************************************************
@@ -276,6 +322,7 @@ $client_sub subscribe $topic_time callback_mqtt_sub_time $qos
 $client_sub subscribe $topic_lines callback_mqtt_sub_lines $qos
 $client_sub subscribe $topic_bricks callback_mqtt_sub_bricks $qos
 $client_sub subscribe $topic_gamestatus callback_mqtt_sub_gamestatus $qos
+$client_sub subscribe $topic_status_progs callback_mqtt_sub_status_progs $qos
 
 # ...und Score via MQTT "anfordern"
 $client_sub publish $topic_get_score "1" $qos

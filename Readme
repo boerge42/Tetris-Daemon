@@ -61,6 +61,11 @@ MQTT-Topics (tetrisd):
   tetris/grid				  --> als 2d-Abbild
   tetris/create_game_screen   --> 1 (leeres Spielfeld neu zeichnen)
   tetris/destroy_game_screen  --> 1 (Spielfeld weg...)
+  tetris/status/tetrisd       --> 0 (tetrisd gestoppt), 1 (tetrisd laeuft)
+  
+  LWT:
+  ----
+  tetris/status/tetrisd  --> 0
 
 
 $ tree -d
@@ -83,20 +88,24 @@ $ tree -d
 └── tetrisd					--> die Tetris-Engine
 
 
-Voraussetzungen/Uebersetzen/Starten (Linux):
-============================================
+Voraussetzungen/Uebersetzen/Starten etc.:
+=========================================
 
 * C-Programme:
   ** libmosquitto-dev muss installiert sein
-  ** make clean; make
+  ** make clean; make; sudo make install
   ** entsprechendes Programm starten ...:-)
-* Tcl/Tk:
+* Tcl/Tk-Scripts:
   ** jeweiliges TCL/TK-Script muss ausführbar sein
   ** ./<programmname> [Enter]
   ** ...smile...
 * alle --> individuelle MQTT-Konfiguration kann jeweils ueber Aufruf-
-           parameter angegeben werden --> ...Quelltext... ;-) 
-  
+           parameter angegeben werden --> ...Quelltext... ;-) bzw.
+           <programmname> -h
+* einige der Programme senden ihren momentanen Status ueber den Topic
+  tetris/status/<name>; Payload 0 bedeutet dabei, dass das Programm ge-
+  stoppt ist, eine 1 bedeutet, Programm laeuft; dieser Topic ist auch 
+  als LWT (last will and testament) konfiguriert
 
 Service-Scripts:
 ================
@@ -105,7 +114,7 @@ Service-Scripts:
                  wenn ein Makefile gefunden wurde; der Target wird als
                  Kommandozeilenparameter dem Script mitgegeben
               
-* start_tetris.sh: ... 
+ 
 
 
 

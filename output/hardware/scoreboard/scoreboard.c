@@ -31,6 +31,14 @@
 #define DISPLAY_COUNT 3
 #define SPI_CHANNEL   0
 
+char mqtt_host[50]	= MQTT_HOST;
+int  mqtt_port    	= MQTT_PORT;
+char mqtt_user[50]	= "";
+char mqtt_pwd[50]	= "";
+uint8_t mqtt_qos    = MQTT_QOS;
+char mqtt_id[50]    = MQTT_CLIENT_ID;
+uint8_t daemonize   = 0;
+
 
 // ********************************************
 void signal_handler(int sig)
@@ -41,6 +49,8 @@ void signal_handler(int sig)
 			break;
 		case SIGTERM:
 			syslog(LOG_INFO, "Stopped with SIGTERM!");
+			// MQTT-LWT auf off
+			mqtt_set_lwt_topic_off(mqtt_qos);
 			// Aufraeumen...
 			mqtt_clear();
 			closelog();
@@ -156,13 +166,6 @@ void mqtt_scoreboard_callback(struct mosquitto *mosq, void *userdata, const stru
 int main(int argc, char **argv)
 {
 	int c;
-	char mqtt_host[50]	= MQTT_HOST;
-	int  mqtt_port    	= MQTT_PORT;
-	char mqtt_user[50]	= "";
-	char mqtt_pwd[50]	= "";
-	uint8_t mqtt_qos    = MQTT_QOS;
-	char mqtt_id[50]    = MQTT_CLIENT_ID;
-	uint8_t daemonize   = 0;
 
 	// Aufrufparameter auslesen/verarbeiten
 	while ((c=getopt(argc, argv, "h:p:u:P:q:i:d?")) != -1) {
