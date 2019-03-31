@@ -38,6 +38,7 @@ char mqtt_pwd[50]	= "";
 uint8_t mqtt_qos    = MQTT_QOS;
 char mqtt_id[50]    = MQTT_CLIENT_ID;
 uint8_t daemonize   = 0;
+uint8_t intensity   = 5;
 
 
 // ********************************************
@@ -47,12 +48,14 @@ void signal_handler(int sig)
 		case SIGHUP:
 			syslog(LOG_INFO, "...receive  SIGHUP, what's up?");
 			break;
+		case SIGINT:
 		case SIGTERM:
-			syslog(LOG_INFO, "Stopped with SIGTERM!");
+			syslog(LOG_INFO, "Stopped with SIGTERM or SIGINT!");
 			// MQTT-LWT auf off
 			mqtt_set_lwt_topic_off(mqtt_qos);
 			// Aufraeumen...
 			mqtt_clear();
+			max7219_clear_all();
 			closelog();
 			exit(0);
 			break;
@@ -158,8 +161,6 @@ void mqtt_scoreboard_callback(struct mosquitto *mosq, void *userdata, const stru
     mosquitto_error_handling(mosquitto_sub_topic_tokens_free(&topics, topic_count));
 }
 
-
-
 // ********************************************************************
 // ********************************************************************
 // ********************************************************************
@@ -168,7 +169,7 @@ int main(int argc, char **argv)
 	int c;
 
 	// Aufrufparameter auslesen/verarbeiten
-	while ((c=getopt(argc, argv, "h:p:u:P:q:i:d?")) != -1) {
+	while ((c=getopt(argc, argv, "h:p:u:P:q:i:b:d?")) != -1) {
 		switch (c) {
 			case 'h':
 				if (strlen(optarg) >= sizeof mqtt_host) {
@@ -210,14 +211,24 @@ int main(int argc, char **argv)
 					strncpy(mqtt_id, optarg, sizeof(mqtt_id));
 				}
 				break;
+			case 'b':
+				if (atoi(optarg)<0 || atoi(optarg)>15) {
+					puts("brightness must be between 0...15!");
+					exit(EXIT_FAILURE);
+				} else {
+					intensity = atoi(optarg);
+				}
+				break;
 			case 'd':
 				daemonize = 1;
 				break;
 			case '?':
-				puts("score [-h <mqtt-host>] [-p <mqtt-port>]");
-				puts("      [-U <mqtt-user>] [-P <mqtt-pwd>]");
-				puts("      [-q <mqtt-qosr>] [-i <mqtt-id>]");
-				puts("      [-d -?]");
+				puts("score [-h <mqtt-host>]  [-p <mqtt-port>]");
+				puts("      [-U <mqtt-user>]  [-P <mqtt-pwd>]");
+				puts("      [-q <mqtt-qosr>]  [-i <mqtt-id>]");
+				puts("      [-b <brightness>] --> LED-brightness [0...15]");
+				puts("      [-d]              --> ...start as deamon");
+				puts("      [-?]              --> ...this!");
 				exit(0);
 				break;
 		}
@@ -238,11 +249,20 @@ int main(int argc, char **argv)
 	// WiringPi init (allein fuer SPI nicht noetig, aber wer weiss, was noch kommt ;-)
 	wiringPiSetup();
 	
+	// einmal mit "einem" MAX7219 "durchinitialisieren", sonst kaskadiert das Zeugs nicht...:-(
+	max7219_init(SPI_CHANNEL, 10000000, 1);
+	max7219_set_intensity_all(intensity);
+	// max7219_set_decode_all(CODE_B_7_0);
+	// max7219_set_shutdown_all(NORMAL_MODE);
+	// max7219_send_data_all(REG_ADDR_SCAN_LIMIT, DISPLAY_0_TO_7);
+	// max7219_clear_all();
+
+
 	// SPI init
 	max7219_init(SPI_CHANNEL, 10000000, DISPLAY_COUNT);
 
 	// Helligkeit, Zeichencode, Anschalten, Scanbreite, alle loeschen
-	max7219_set_intensity_all(5);
+	max7219_set_intensity_all(intensity);
 	max7219_set_decode_all(CODE_B_7_0);
 	max7219_set_shutdown_all(NORMAL_MODE);
 	max7219_send_data_all(REG_ADDR_SCAN_LIMIT, DISPLAY_0_TO_7);

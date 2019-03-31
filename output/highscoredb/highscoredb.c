@@ -183,7 +183,7 @@ int main(int argc, char **argv)
 				break;
 
 			case 'f':
-				if (strlen(optarg) >= sizeof db_filename) {
+				if (strlen(optarg) >= sizeof(db_filename)) {
 					puts("db_filename too long!");
 					exit(EXIT_FAILURE);
 				} else {
