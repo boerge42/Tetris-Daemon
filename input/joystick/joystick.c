@@ -47,8 +47,6 @@
  *----------------------------------------------------------------------
 */
 
-
-
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -63,7 +61,6 @@
 
 #include "my_mqtt.h"
 
-
 struct js_event_t {
 	unsigned int time;      // event timestamp in ms
 	short value;   			// value 
@@ -76,7 +73,6 @@ struct js_event_t {
 
 #define JS_DEVICE			"/dev/input/js0"
 
-
 // Tastendefinitionen fuer Tetris
 #define KEY_UNKNOWN			0
 #define KEY_QUIT_GAME		1
@@ -87,28 +83,51 @@ struct js_event_t {
 #define KEY_BRICK_LEFT		6
 #define KEY_BRICK_RIGHT		7
 
+typedef struct tetris_buttons_t tetris_buttons_t;
 struct tetris_buttons_t {
 	uint8_t js_type;
 	uint8_t js_number;
-	short 	js_value;
+	int	js_value;
 	uint8_t	tetris_key;
 };
 
-
-struct tetris_buttons_t tetris_buttons[] =
+const tetris_buttons_t logitech_gamepad_f310[] =
 {
-	{0, 0, 0, 		KEY_QUIT_GAME},
-	{1, 6, 1, 		KEY_PAUSE_GAME},
+	{0, 0, 0, 		KEY_QUIT_GAME},			
+	{1, 6, 1, 		KEY_PAUSE_GAME},		
 	{1, 3, 1, 		KEY_PAUSE_GAME},
 	{1, 7, 1, 		KEY_NEW_GAME},
 	{1, 2, 1, 		KEY_NEW_GAME},
 	{2, 7, 32767, 	KEY_BRICK_DROP},
 	{2, 7, -32767, 	KEY_BRICK_ROTATE},
 	{2, 6, -32767, 	KEY_BRICK_LEFT},
-	{2, 6, 32767, 	KEY_BRICK_RIGHT}
+	{2, 6, 32767, 	KEY_BRICK_RIGHT},
 };
 
-#define SIZEOF_TETRIS_BUTTONS sizeof(tetris_buttons)/sizeof(tetris_buttons[0])
+const tetris_buttons_t wii_remote[] =
+{
+	{1, 10, 1, 		KEY_QUIT_GAME},			
+	{1, 11, 1, 		KEY_PAUSE_GAME},		
+	{1, 12, 1, 		KEY_NEW_GAME},
+	{2,  0, 32767, 	KEY_BRICK_DROP},
+	{2,  0, -32767,	KEY_BRICK_ROTATE},
+	{2,  1, -32767,	KEY_BRICK_LEFT},
+	{2,  1, 32767, 	KEY_BRICK_RIGHT}
+};
+
+typedef struct controller_entry_t controller_entry_t;
+struct controller_entry_t
+{
+	uint8_t idx;
+	uint8_t count;
+	const tetris_buttons_t *btn;
+};
+
+const controller_entry_t controller[]=
+{
+	{0, (sizeof(logitech_gamepad_f310)/sizeof(logitech_gamepad_f310[0])), 	logitech_gamepad_f310},
+	{1, (sizeof(wii_remote)/sizeof(wii_remote[0])), 						wii_remote}
+};
 
 char mqtt_host[50]	= MQTT_HOST;
 int  mqtt_port    	= MQTT_PORT;
@@ -118,10 +137,9 @@ uint8_t mqtt_qos    = MQTT_QOS;
 char mqtt_id[50]    = MQTT_CLIENT_ID;
 uint8_t daemonize   = 0;
 uint8_t verbose     = 0;
+uint8_t controller_typ = 0;
 
 extern struct mosquitto *mosq;
-
-
 
 // ********************************************
 void signal_handler(int sig)
@@ -161,8 +179,6 @@ void start_daemon (void)
 	for (i = sysconf(_SC_OPEN_MAX); i>0; i--) close(i);
 }
 
-
-
 // ******************************************************
 // ******************************************************
 // ******************************************************
@@ -174,9 +190,8 @@ int main(int argc, char **argv)
 	int c;
 	char buf[10];
 	
-	
 	// Aufrufparameter auslesen/verarbeiten
-	while ((c=getopt(argc, argv, "h:p:u:P:q:i:vd?")) != -1) {
+	while ((c=getopt(argc, argv, "h:p:u:P:q:i:c:vd?")) != -1) {
 		switch (c) {
 			case 'h':
 				if (strlen(optarg) >= sizeof mqtt_host) {
@@ -210,6 +225,11 @@ int main(int argc, char **argv)
 					strncpy(mqtt_id, optarg, sizeof(mqtt_id));
 				}
 				break;
+			case 'c':
+				controller_typ = atoi(optarg);
+				if (controller_typ < 0) controller_typ = 0;
+				if (controller_typ > (sizeof(controller)/sizeof(controller[0])-1)) controller_typ = 0;
+				break;
 			case 'P':
 				if (strlen(optarg) >= sizeof mqtt_pwd) {
 					puts("password too long!");
@@ -231,6 +251,7 @@ int main(int argc, char **argv)
 				puts("         [-P <mqtt-pwd>]   --> MQTT-Pwd       (default: \"\")");
 				puts("         [-q <mqtt-qos>]   --> MQTT-QoS       (default: 0)");
 				puts("         [-i <mqtt-id>]    --> MQTT-Client-ID (default: tetrisd)");
+				puts("         [-c <number>]     --> Gamecontroller (default: 0)");
 				puts("         [-d]              --> ..as daemon    (default: no)");
 				puts("         [-v]              --> verbose        (default: no)");
 				puts("         [-?]              --> print this...");
@@ -238,7 +259,6 @@ int main(int argc, char **argv)
 				break;
 		}
 	}
-	
 	
 	// Programm daemonisieren
 	if (daemonize) {
@@ -279,14 +299,13 @@ int main(int argc, char **argv)
 		}
 		// Tetristaste bestimmen, wenn Type Button oder Axis
 		if( e.type == JS_EVENT_BUTTON || e.type == JS_EVENT_AXIS ) {
-		
 			i=0;
 			tetris_key = KEY_UNKNOWN;
-			while (i < SIZEOF_TETRIS_BUTTONS && tetris_key == KEY_UNKNOWN) {
-				if (e.type   == tetris_buttons[i].js_type   &&
-					e.number == tetris_buttons[i].js_number &&
-					e.value  == tetris_buttons[i].js_value     ) {
-					tetris_key = tetris_buttons[i].tetris_key;
+			while (i < controller[controller_typ].count && tetris_key == KEY_UNKNOWN) {
+				if (e.type     == controller[controller_typ].btn[i].js_type   &&
+					e.number   == controller[controller_typ].btn[i].js_number &&
+					e.value    == controller[controller_typ].btn[i].js_value     ) {
+					tetris_key = controller[controller_typ].btn[i].tetris_key;
 				}
 				i++;
 			}
@@ -310,4 +329,3 @@ int main(int argc, char **argv)
 	mqtt_clear();
     return 0;
 }
-

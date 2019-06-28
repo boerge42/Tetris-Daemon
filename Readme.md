@@ -8,7 +8,7 @@ Die Idee ist es, eine Tetris-Engine zu haben, an die man, ohne grosse Probleme, 
 
                             +---------------+
                             |               |          +------------------+
-                            |               |--------->|Terminalprogramme|
+                            |               |--------->|Terminalprogramme |
     +--------------+        |               |          +------------------+
     |Joystick      |------->|               |
     +--------------+        |               |          +------------------+
@@ -45,7 +45,7 @@ Die Idee ist es, eine Tetris-Engine zu haben, an die man, ohne grosse Probleme, 
   - entsprechendes Programm starten ...:-)
 - Tcl/Tk-Scripts: Tcl/Tk muss installiert sein
 - alle: die individuelle MQTT-Konfiguration kann jeweils über Aufrufparameter angegeben werden
-- einige der Programme senden ihren momentanen Status, als MQTT-Nachricht, über den Topic tetris/status/\<programmname\>; Payload 0 bedeutet dabei, dass das Programm gestoppt ist, eine 1 bedeutet, Programm läuft; dieser Topic ist auch als LWT (last will and testament) konfiguriert
+- einige der Programme senden ihren momentanen Status, als MQTT-Nachricht, über den Topic tetris/status/\<programmname\>; Payload 0 bedeutet dabei, dass das Programm gestoppt ist, eine 1 bedeutet, Programm läuft; dieser Topic ist auch als LWT ("last will and testament") konfiguriert
 
 ## Verzeichnisstruktur
 
@@ -119,7 +119,7 @@ Die Idee ist es, eine Tetris-Engine zu haben, an die man, ohne grosse Probleme, 
 
 ## Service-Scripts:
 
-- batch_make.sh: make-Kommando in allen Unterverzeichnissen ausfuheren, wenn ein Makefile gefunden wurde; der Target wird als Kommandozeilenparameter dem Script mitgegeben
+- batch_make.sh: make-Kommando in allen Unterverzeichnissen ausfüheren, wenn ein Makefile gefunden wurde; der entsprechende make-Befehl wird als Kommandozeilenparameter dem Script mitgegeben
               
 ## Bilder
 
@@ -127,8 +127,15 @@ Die Idee ist es, eine Tetris-Engine zu haben, an die man, ohne grosse Probleme, 
 ![Tcl/tk-Grid](images/tcltk_grid.png)
 ![Scoreboard/Next-Brick](images/scoreboards.jpg)
 
+
+## Danke!
+- Tutorial zur Konfiguration eines Wiimote-Controllers via Bluetooth als Joystick an einen Raspberry Pi: https://pimylifeup.com/raspberry-pi-wiimote-controllers/
+
+
 ## Autor
-Uwe Berger; 2017, 2018, 219
+Uwe Berger; 2017, 2018, 2019
+
 bergeruw@gmx.net
+
 
 Have fun!

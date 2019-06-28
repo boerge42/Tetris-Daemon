@@ -252,10 +252,10 @@ int main(int argc, char **argv)
 	// einmal mit "einem" MAX7219 "durchinitialisieren", sonst kaskadiert das Zeugs nicht...:-(
 	max7219_init(SPI_CHANNEL, 10000000, 1);
 	max7219_set_intensity_all(intensity);
-	// max7219_set_decode_all(CODE_B_7_0);
-	// max7219_set_shutdown_all(NORMAL_MODE);
-	// max7219_send_data_all(REG_ADDR_SCAN_LIMIT, DISPLAY_0_TO_7);
-	// max7219_clear_all();
+	max7219_set_decode_all(CODE_B_7_0);
+	max7219_set_shutdown_all(NORMAL_MODE);
+	max7219_send_data_all(REG_ADDR_SCAN_LIMIT, DISPLAY_0_TO_7);
+	max7219_clear_all();
 
 
 	// SPI init
