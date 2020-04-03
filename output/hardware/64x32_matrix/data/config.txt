@@ -1,0 +1,9 @@
+wlan_ssid=wlanssid
+wlan_pwd=wlanpwd
+hostname=pxmatrix
+mqtt_brocker=broker
+mqtt_port=1883
+mqtt_user=
+mqtt_pwd=
+mqtt_client_id=matrix64x32
+time_zone=Europe/Berlin

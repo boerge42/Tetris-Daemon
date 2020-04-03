@@ -45,6 +45,7 @@ Die Idee ist es, eine Tetris-Engine zu haben, an die man, ohne grosse Probleme, 
   - entsprechendes Programm starten ...:-)
 - Tcl/Tk-Scripts: Tcl/Tk muss installiert sein
 - alle: die individuelle MQTT-Konfiguration kann jeweils über Aufrufparameter angegeben werden
+- einige wenige Programme sind mit der Arduino-IDE geschrieben/übersetzt/geflasht worden
 - einige der Programme senden ihren momentanen Status, als MQTT-Nachricht, über den Topic tetris/status/\<programmname\>; Payload 0 bedeutet dabei, dass das Programm gestoppt ist, eine 1 bedeutet, Programm läuft; dieser Topic ist auch als LWT ("last will and testament") konfiguriert
 
 ## Verzeichnisstruktur
@@ -59,7 +60,8 @@ Die Idee ist es, eine Tetris-Engine zu haben, an die man, ohne grosse Probleme, 
     │   ├── hardware
     │   │   ├── max7219_test    --> Test MAX7219
     │   │   ├── scoreboard      --> Scoreboard via MAX7219
-    |   |   └── next_brick      --> Anzeige "Naechster Stein" auf einer 8x8-WS2812-Matrix
+    |   |   ├── next_brick      --> Anzeige "Naechster Stein" auf einer 8x8-WS2812-Matrix
+    |   |   └── 64x32_matrix    --> Grid auf einer 64x32-Matrix (Stichwort: pxmatrix)
     │   ├── tcltk
     │   │   └── grid            --> Grid & Score via Tcl/Tk
     │   └── terminal
@@ -126,14 +128,14 @@ Die Idee ist es, eine Tetris-Engine zu haben, an die man, ohne grosse Probleme, 
 ![Terminal-Grid](images/terminal_grid.png)
 ![Tcl/tk-Grid](images/tcltk_grid.png)
 ![Scoreboard/Next-Brick](images/scoreboards.jpg)
-
+![64x32_matrix-Grid](images/64x32_matrix.jpg)
 
 ## Danke!
 - Tutorial zur Konfiguration eines Wiimote-Controllers via Bluetooth als Joystick an einen Raspberry Pi: https://pimylifeup.com/raspberry-pi-wiimote-controllers/
 
 
 ## Autor
-Uwe Berger; 2017, 2018, 2019
+Uwe Berger; 2017, 2018, 2019, 2020
 
 bergeruw@gmx.net
 
