@@ -29,7 +29,7 @@ uint16_t clock_GREEN = display.color565(0, 255, 0);
 uint16_t clock_BLUE = display.color565(0, 0, 255);
 uint16_t clock_WHITE = display.color565(100, 100, 100);
 
-uint8_t clock_type = 3;
+uint8_t clock_type = 1;
 
 
 // **************************************************************
@@ -229,65 +229,45 @@ void draw_clock_stencil_digit(uint8_t xp, uint8_t yp, uint8_t v)
   uint8_t x = CLOCK_DIGIT_DY * xp + xp;
   uint8_t y = CLOCK_DIGIT_DX * yp + yp;
 	
-  // ToDo: Doppellinien durch gefuellte Rechtecke ersetzen
   switch (v) {
 	case 0:
-	  display.drawFastHLine(x+CLOCK_DIGIT_DX/2-1,     y+CLOCK_DIGIT_DY/3-1, CLOCK_DIGIT_DY/3+3, clock_textColor);
-	  display.drawFastHLine(x+CLOCK_DIGIT_DX/2-1,     y+CLOCK_DIGIT_DY/3,   CLOCK_DIGIT_DY/3+3, clock_textColor);
+	  display.fillRect(x+CLOCK_DIGIT_DX/2-1, y+CLOCK_DIGIT_DY/3-1, CLOCK_DIGIT_DY/3+3, 2, clock_textColor);
 	  break;  
 	case 1:
-	  display.drawFastHLine(x, y+CLOCK_DIGIT_DY/3-1,  CLOCK_DIGIT_DY-1, clock_textColor);
-	  display.drawFastHLine(x, y+CLOCK_DIGIT_DY/3,    CLOCK_DIGIT_DY-1, clock_textColor);
+	  display.fillRect(x, y+CLOCK_DIGIT_DY/3-1,  CLOCK_DIGIT_DY-1, 2, clock_textColor);
 	  break;  
 	case 2:
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3)-1,   y+CLOCK_DIGIT_DX/2-1,  CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3),     y+CLOCK_DIGIT_DX/2-1,  CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3),   y,                     CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3)+1, y,                     CLOCK_DIGIT_DX/2+1, clock_textColor);
+	  display.fillRect(x+(CLOCK_DIGIT_DY/3)-1, y+CLOCK_DIGIT_DX/2-1, 2, CLOCK_DIGIT_DX/2+1, clock_textColor);
+	  display.fillRect(x+2*(CLOCK_DIGIT_DY/3), y, 2, CLOCK_DIGIT_DX/2+1, clock_textColor);
 	  break;  
 	case 3:
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3)-1,   y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3),     y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3),   y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3)+1, y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1, clock_textColor);
+	  display.fillRect(x+(CLOCK_DIGIT_DY/3)-1, y+CLOCK_DIGIT_DX/2-1, 2, CLOCK_DIGIT_DX/2+1, clock_textColor);
+	  display.fillRect(x+2*(CLOCK_DIGIT_DY/3),   y+CLOCK_DIGIT_DX/2-1, 2, CLOCK_DIGIT_DX/2+1, clock_textColor);
 	  break;  
 	case 4:
-	  display.drawFastHLine(x,                        y+CLOCK_DIGIT_DY/3-1, CLOCK_DIGIT_DY/3+1, clock_textColor);
-	  display.drawFastHLine(x,                        y+CLOCK_DIGIT_DY/3,   CLOCK_DIGIT_DY/3+1, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3),   y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3)+1, y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1, clock_textColor);
-	  display.drawFastHLine(x+2*(CLOCK_DIGIT_DY/3),   y+CLOCK_DIGIT_DY/3-1, CLOCK_DIGIT_DY/3+1, clock_textColor);
-	  display.drawFastHLine(x+2*(CLOCK_DIGIT_DY/3),   y+CLOCK_DIGIT_DY/3,   CLOCK_DIGIT_DY/3+1, clock_textColor);
+	  display.fillRect(x, y+CLOCK_DIGIT_DY/3-1, CLOCK_DIGIT_DY/3+1, 2, clock_textColor);
+	  display.fillRect(x+2*(CLOCK_DIGIT_DY/3), y+CLOCK_DIGIT_DX/2-1, 2, CLOCK_DIGIT_DX/2+1, clock_textColor);
+	  display.fillRect(x+2*(CLOCK_DIGIT_DY/3), y+CLOCK_DIGIT_DY/3-1, CLOCK_DIGIT_DY/3+1, 2, clock_textColor);
 	  break;  
 	case 5:
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3)-1,   y,                    CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3),     y,                    CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3),   y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3)+1, y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1, clock_textColor);
+	  display.fillRect(x+(CLOCK_DIGIT_DY/3)-1, y, 2, CLOCK_DIGIT_DX/2+1, clock_textColor);
+	  display.fillRect(x+2*(CLOCK_DIGIT_DY/3),   y+CLOCK_DIGIT_DX/2-1, 2, CLOCK_DIGIT_DX/2+1, clock_textColor);
 	  break;  
 	case 6:
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3)-1,   y,                    CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3),     y,                    CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3),   y+CLOCK_DIGIT_DX/2-1, 2,                  clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3)+1, y+CLOCK_DIGIT_DX/2-1, 2,                  clock_textColor);
+	  display.fillRect(x+(CLOCK_DIGIT_DY/3)-1, y, 2, CLOCK_DIGIT_DX/2+1, clock_textColor);
+	  display.fillRect(x+2*(CLOCK_DIGIT_DY/3), y+CLOCK_DIGIT_DX/2-1, 2, 2, clock_textColor);
 	  break;  
 	case 7:
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3)-1,   y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1,     clock_textColor);
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3),     y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1,     clock_textColor);
-	  display.drawFastHLine(x+CLOCK_DIGIT_DX/2-1,     y+CLOCK_DIGIT_DY/3-1, 2*(CLOCK_DIGIT_DY/3)+2, clock_textColor);
-	  display.drawFastHLine(x+CLOCK_DIGIT_DX/2-1,     y+CLOCK_DIGIT_DY/3,   2*(CLOCK_DIGIT_DY/3)+2, clock_textColor);
+	  display.fillRect(x+(CLOCK_DIGIT_DY/3)-1, y+CLOCK_DIGIT_DX/2-1, 2, CLOCK_DIGIT_DX/2+1, clock_textColor);
+	  display.fillRect(x+CLOCK_DIGIT_DX/2-1, y+CLOCK_DIGIT_DY/3-1, 2*(CLOCK_DIGIT_DY/3)+2, 2, clock_textColor);
       break;  
 	case 8:
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3)-1,   y+CLOCK_DIGIT_DX/2-1, 2, clock_textColor);
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3),     y+CLOCK_DIGIT_DX/2-1, 2, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3),   y+CLOCK_DIGIT_DX/2-1, 2, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3)+1, y+CLOCK_DIGIT_DX/2-1, 2, clock_textColor);
+	  display.fillRect(x+(CLOCK_DIGIT_DY/3)-1, y+CLOCK_DIGIT_DX/2-1, 2, 2, clock_textColor);
+	  display.fillRect(x+2*(CLOCK_DIGIT_DY/3),   y+CLOCK_DIGIT_DX/2-1, 2, 2, clock_textColor);
 	  break;  
 	case 9:
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3)-1,   y+CLOCK_DIGIT_DX/2-1, 2,                  clock_textColor);
-      display.drawFastVLine(x+(CLOCK_DIGIT_DY/3),     y+CLOCK_DIGIT_DX/2-1, 2,                  clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3),   y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1, clock_textColor);
-      display.drawFastVLine(x+2*(CLOCK_DIGIT_DY/3)+1, y+CLOCK_DIGIT_DX/2-1, CLOCK_DIGIT_DX/2+1, clock_textColor);
+	  display.fillRect(x+(CLOCK_DIGIT_DY/3)-1, y+CLOCK_DIGIT_DX/2-1, 2, 2, clock_textColor);
+	  display.fillRect(x+2*(CLOCK_DIGIT_DY/3), y+CLOCK_DIGIT_DX/2-1, 2, CLOCK_DIGIT_DX/2+1, clock_textColor);
 	  break;  
   }
 }
@@ -297,13 +277,11 @@ void draw_clock_stencil(uint8_t h, uint8_t m)
 {
   // Bildschirm loeschen
   display.fillScreen(clock_BLACK);
-  // Kreuz  
+  // Hintergrund  
   display.fillRect(0, 0, 2*CLOCK_DIGIT_DY, 2*CLOCK_DIGIT_DX, clock_backgroundColor);
-  // ToDo: Doppellinien durch gefuellte Rechtecke ersetzen
-  display.drawFastHLine(0, CLOCK_DIGIT_DX-1, 2*CLOCK_DIGIT_DY, clock_textColor);
-  display.drawFastHLine(0, CLOCK_DIGIT_DX, 2*CLOCK_DIGIT_DY, clock_textColor);
-  display.drawFastVLine(CLOCK_DIGIT_DY-1, 0, 2*CLOCK_DIGIT_DX, clock_textColor);
-  display.drawFastVLine(CLOCK_DIGIT_DY, 0, 2*CLOCK_DIGIT_DX, clock_textColor);
+  // Kreuz  
+  display.fillRect(0, CLOCK_DIGIT_DX-1, 2*CLOCK_DIGIT_DY, 2, clock_textColor);
+  display.fillRect(CLOCK_DIGIT_DY-1, 0, 2, 2*CLOCK_DIGIT_DX, clock_textColor);
   // Stunde/Minute
   draw_clock_stencil_digit(0, 0, (h%10));  // --> Stunden-Einer
   draw_clock_stencil_digit(0, 1, (h/10));  // --> Stunden-Zehner

@@ -27,18 +27,20 @@
 
 #include "my_mqtt.h"
 #include "max7219.h"
+#include "timer.h"
 
 #define DISPLAY_COUNT 3
 #define SPI_CHANNEL   0
 
-char mqtt_host[50]	= MQTT_HOST;
-int  mqtt_port    	= MQTT_PORT;
-char mqtt_user[50]	= "";
-char mqtt_pwd[50]	= "";
-uint8_t mqtt_qos    = MQTT_QOS;
-char mqtt_id[50]    = MQTT_CLIENT_ID;
-uint8_t daemonize   = 0;
-uint8_t intensity   = 5;
+char mqtt_host[50]	   = MQTT_HOST;
+int  mqtt_port    	   = MQTT_PORT;
+char mqtt_user[50]	   = "";
+char mqtt_pwd[50]	   = "";
+uint8_t mqtt_qos       = MQTT_QOS;
+char mqtt_id[50]       = MQTT_CLIENT_ID;
+uint8_t daemonize      = 0;
+uint8_t intensity      = 5;
+uint8_t display_tetris = 1;
 
 
 // ********************************************
@@ -79,6 +81,14 @@ void start_daemon (void)
 	umask(0);
 	// alle offenen Files schliessen
 	for (i = sysconf(_SC_OPEN_MAX); i>0; i--) close(i);
+}
+
+// ********************************************************************
+void timer_handler(void)
+{
+	stop_timer();
+	display_tetris = 0;
+	max7219_clear_all();
 }
 
 // ********************************************************************
@@ -123,13 +133,20 @@ void mqtt_scoreboard_callback(struct mosquitto *mosq, void *userdata, const stru
 				case 1:
 					// Pause --> 'P'
 					max7219_send_data(0, REG_ADDR_DIGIT7, 0xE);
+	                start_timer(10000, &timer_handler);
 					break;
 				case 2:
 					// Spielende --> 'E'
 					max7219_send_data(0, REG_ADDR_DIGIT7, 0xB);
+					start_timer(10000, &timer_handler);
 					break;	
 				default:
 					max7219_send_data(0, REG_ADDR_DIGIT7, CHAR_BLANK);
+					if (!display_tetris) {
+						stop_timer();
+						display_tetris = 1;
+						max7219_clear_all();
+					}
 					break;						
 			}
 		}
@@ -139,7 +156,7 @@ void mqtt_scoreboard_callback(struct mosquitto *mosq, void *userdata, const stru
 		}
 	}
 	
-	if (strcmp(topics[0], "scoreboard") == 0) {
+	if ((strcmp(topics[0], "scoreboard") == 0) && !display_tetris) {
 		memset(buf, 0, DISPLAY_COUNT*8+1);
         memcpy(buf, message->payload, DISPLAY_COUNT*8+1);
 		//printf("%s --> %i\n", message->payload, message->payloadlen);
@@ -256,6 +273,12 @@ int main(int argc, char **argv)
 	max7219_set_shutdown_all(NORMAL_MODE);
 	max7219_send_data_all(REG_ADDR_SCAN_LIMIT, DISPLAY_0_TO_7);
 	max7219_clear_all();
+	max7219_display_value(0, 0, 0, -1);
+	max7219_display_value(0, 4, 0, -1);
+	max7219_display_value(1, 0, 1, -1);
+	max7219_display_value(1, 4, 1, -1);
+	max7219_display_value(2, 0, 2, -1);
+	max7219_display_value(2, 4, 2, -1);
 
 
 	// SPI init
