@@ -45,7 +45,8 @@
 #define MQTT_TOPIC_GAME_STATUS        "tetris/gamestatus"
 #define MQTT_TOPIC_GET_SCORE          "tetris/get_score"
 #define MQTT_TOPIC_CREATE_GAME_SCREEN "tetris/create_game_screen"
-#define MQTT_TOPIC_CLOCK_TYPE         "clock_type/"
+#define MQTT_TOPIC_CLOCK_TYPE         "pxmatrix/clock_type"
+#define MQTT_TOPIC_BRIGHTNESS         "pxmatrix/brightness"
 
 
 // Zeitzone
@@ -119,7 +120,7 @@ uint16_t tetris_BROWN   = 0xA145;
 uint16_t tetris_MAGENTA = 0xF81F;
 uint16_t tetris_CYAN    = 0x07FF;
 
-uint16_t tetris_colors[] =
+const uint16_t tetris_colors[] =
 {
 	tetris_BLACK,    // black
     tetris_GREEN,    // green
@@ -131,7 +132,7 @@ uint16_t tetris_colors[] =
     tetris_CYAN      // lightblue/cyan
 };
 
-
+const uint8_t brightness_values[10] = {0, 25, 50, 75, 100, 125, 150, 175, 200, 255};
 
 extern uint8_t clock_type;
 
@@ -144,7 +145,7 @@ uint8_t display_mode = DISPLAY_MODE_CLOCK;
 // ISR for display refresh
 void display_updater()
 {
-  display.display(60);
+  display.display(70);
 }
 
 // **************************************************************
@@ -212,6 +213,7 @@ void tetris_drawgrid(char * grid, unsigned int len)
 {
   uint16_t i;
   div_t divresult;
+  uint8_t color;
   //unsigned long start_timer = micros();
   
   display.fillScreen(tetris_BLACK);
@@ -219,8 +221,9 @@ void tetris_drawgrid(char * grid, unsigned int len)
   for (i=0; i<len; i++) {
 	if (grid[i] != '0') {
 		divresult=div(i, 20);
-		//tetris_drawrect(i/20, i%20, tetris_colors[grid[i]-0x30]);  
-		tetris_drawrect(divresult.quot, divresult.rem, tetris_colors[grid[i]-0x30]);  
+		color = grid[i]-0x30;
+		if (color > 9) color=0;
+		tetris_drawrect(divresult.quot, divresult.rem, tetris_colors[color]);  
 	}
   }
   display.showBuffer();
@@ -230,31 +233,23 @@ void tetris_drawgrid(char * grid, unsigned int len)
 // **************************************************************
 void mqtt_callback(char* topic, byte* payload, unsigned int length) 
 {
-  char tetris_gamestatus;
-  
+  char tetris_gamestatus, brightness;
+ 
   if (strcmp(topic, MQTT_TOPIC_GRID) == 0) {
-	// empfangenes Tetris-Grid ausgeben
 	tetris_drawgrid((char*)payload, length);
   } else
   if (strcmp(topic, MQTT_TOPIC_CLOCK_TYPE) == 0) {
-	clock_type = atoi((char*)payload);	
+	clock_type = payload[0]-0x30;	
 	Serial.printf("--> clock_type: %i\n", clock_type);
   } else
-  if (strcmp(topic, MQTT_TOPIC_GAME_STATUS) == 0) {
-	
-	//tetris_gamestatus = atoi((char*)payload);	
+  if (strcmp(topic, MQTT_TOPIC_BRIGHTNESS) == 0) {
+	  brightness = payload[0]-0x30;	
+      if (brightness > 9) brightness = 9;
+      display.setBrightness(brightness_values[brightness]);
+      Serial.printf("--> brightness: %i\n", brightness);
+  } else  if (strcmp(topic, MQTT_TOPIC_GAME_STATUS) == 0) {
 	tetris_gamestatus = payload[0]-0x30;	
-	
-	// * timer ausschalten, wenn er laeuft
 	if (display_mode_ticker.active()) display_mode_ticker.detach(); 
-	// 0  --> tetris laeuft
-	//    * display_mode --> tetris
-	// 1  --> tetris pause
-	//    * timer starten, der nach 10s display_mode --> clock
-	// 2  --> tetris game over
-	//    * timer starten, der nach 10s display_mode --> clock
-	//Serial.printf("--> tetris_gamestatus: %i\n", tetris_gamestatus);
-	//Serial.printf("--> payload_length: %i\n", length);
 	switch (tetris_gamestatus ) {
 	  case 0:
 	    display_mode = DISPLAY_MODE_TETRIS;
@@ -266,15 +261,11 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
 	}
   } else
   if (strcmp(topic, MQTT_TOPIC_CREATE_GAME_SCREEN) == 0) {
-	// * timer ausschalten, wenn er laeuft
 	if (display_mode_ticker.active()) display_mode_ticker.detach(); 
-	// * display_mode --> tetris
 	display_mode = DISPLAY_MODE_TETRIS;
-	// * Tetris-Spielfeld neu initialisieren/zeichnen
 	tetris_init_game_screen();
   }  
 }
-
 
 // **************************************************************
 void mqtt_reconnect ()
@@ -300,6 +291,7 @@ void mqtt_reconnect ()
   mqtt_client.subscribe(MQTT_TOPIC_GRID);
   mqtt_client.subscribe(MQTT_TOPIC_CLOCK_TYPE);
   mqtt_client.subscribe(MQTT_TOPIC_CREATE_GAME_SCREEN);
+  mqtt_client.subscribe(MQTT_TOPIC_BRIGHTNESS);
 }
 
 
