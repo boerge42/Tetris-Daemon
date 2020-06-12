@@ -1,8 +1,8 @@
 /* ********************************************************************
  *
- * Anzeige Grid auf einer 64x32-LED-Matrix
- * =======================================
- *           Uwe Berger; 2020
+ * Anzeige Tetris-Grid auf einer 64x32-LED-Matrix
+ * ==============================================
+ *              Uwe Berger; 2020
  *
  * ...plus einiger Uhren in den Spielpausen...
  *
@@ -70,6 +70,8 @@ char mqttClientId[30]   = MQTT_CLIENT_ID;
 WiFiClient espClient;
 PubSubClient mqtt_client(espClient);
 
+bool with_mqtt = false;
+
 #include <Ticker.h>
 Ticker display_ticker;
 Ticker display_mode_ticker;
@@ -84,7 +86,7 @@ Ticker display_mode_ticker;
 
 // Pins for LED MATRIX
 //PxMATRIX display(32,16,P_LAT, P_OE,P_A,P_B,P_C);
-PxMATRIX display(64,32,P_LAT, P_OE,P_A,P_B,P_C,P_D);
+PxMATRIX display(64,32,P_LAT, P_OE,P_A,P_B,P_C,P_D); 
 //PxMATRIX display(64,64,P_LAT, P_OE,P_A,P_B,P_C,P_D,P_E);
 
 /*
@@ -270,6 +272,7 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
 // **************************************************************
 void mqtt_reconnect ()
 {
+  
   // MQTT...
   // ...initialisieren
   mqtt_client.setServer(mqttServer, mqttPort);
@@ -280,18 +283,27 @@ void mqtt_reconnect ()
     Serial.println("Connecting to MQTT...");
     if (mqtt_client.connect(mqttClientId, mqttUser, mqttPassword )) {
        Serial.println("Connected!");  
+       with_mqtt = true;
     } else {
       Serial.print("failed with state ");
-      Serial.print(mqtt_client.state());
-      delay(500);
+      Serial.println(mqtt_client.state());
+      // wenn der Broker mal nicht erreichbar ist, dann soll dieses
+      // Programm, bis zum naechsten Restart/Reset, auch ohne MQTT-Zeugs 
+      // funktionieren (PubSubClient-Lib arbeitet nicht asynchron, ein
+      // Connect-Versuch blockiert den Rest ggf. eine Ewigkeit, also
+      // kontraproduktiv fuer eine fortlaufende Uhr...)
+      with_mqtt = false;
+      break;
     }
   }
-  // ...Topic abonnieren
-  mqtt_client.subscribe(MQTT_TOPIC_GAME_STATUS);
-  mqtt_client.subscribe(MQTT_TOPIC_GRID);
-  mqtt_client.subscribe(MQTT_TOPIC_CLOCK_TYPE);
-  mqtt_client.subscribe(MQTT_TOPIC_CREATE_GAME_SCREEN);
-  mqtt_client.subscribe(MQTT_TOPIC_BRIGHTNESS);
+  // ...Topics abonnieren
+  if (mqtt_client.connected()) {
+    mqtt_client.subscribe(MQTT_TOPIC_GAME_STATUS);
+    mqtt_client.subscribe(MQTT_TOPIC_GRID);
+    mqtt_client.subscribe(MQTT_TOPIC_CLOCK_TYPE);
+    mqtt_client.subscribe(MQTT_TOPIC_CREATE_GAME_SCREEN);
+    mqtt_client.subscribe(MQTT_TOPIC_BRIGHTNESS);
+  }
 }
 
 
@@ -368,7 +380,6 @@ void config_read()
   f.close();
 }
 
-
 // **************************************************************
 void setup() {
 	
@@ -420,9 +431,14 @@ void loop() {
     events();
   }
   
-  // MQTT-Loop
-  if (!mqtt_client.connected()) {
-    mqtt_reconnect();
+  // MQTT-Loop (...wenn der Broker beim letzten connect-Versuch 
+  // erreichbar war)
+  if (with_mqtt == true) {
+    if (!mqtt_client.connected()) {
+      mqtt_reconnect();
+    } else {
+      mqtt_client.loop();
+    }
   }
-  mqtt_client.loop();
+  
 }

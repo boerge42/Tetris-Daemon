@@ -29,7 +29,7 @@ uint16_t clock_GREEN = display.color565(0, 255, 0);
 uint16_t clock_BLUE = display.color565(0, 0, 255);
 uint16_t clock_WHITE = display.color565(100, 100, 100);
 
-uint8_t clock_type = 1;
+uint8_t clock_type = 0;
 
 
 // **************************************************************
@@ -295,6 +295,40 @@ void draw_clock_stencil(uint8_t h, uint8_t m)
 // **************************************************************
 void draw_clock_text()
 {
+  uint8_t y = 1;
+  uint8_t dy = 9;
+  
+  display.setRotate(true);
+  display.setRotation(1);
+  display.clearDisplay();
+  display.setTextColor(clock_YELLOW);
+  display.setCursor(1, y);
+  
+  display.print(myTZ.dateTime("D"));
+  y=y+dy;
+  display.setCursor(1, y);
+  display.print(myTZ.dateTime("d"));
+  y=y+dy;
+  display.setCursor(1, y);
+  display.print(myTZ.dateTime("M"));
+  y=y+dy;
+  display.setCursor(1, y);
+  display.print(myTZ.dateTime("Y"));
+  y=y+dy+dy;
+  display.setCursor(1, y);
+  
+  display.print(myTZ.dateTime("H:i"));
+  y=y+dy;
+  display.setCursor(1+3*6, y);
+  display.print(myTZ.dateTime("s"));
+  display.showBuffer();
+  display.setRotate(false);
+  display.setRotation(0);
+}
+
+// **************************************************************
+void ___draw_clock_text()
+{
   display.fillScreen(clock_backgroundColor);
   display.setTextColor(clock_textColor);
   display.setCursor(1, 1);
@@ -303,8 +337,8 @@ void draw_clock_text()
   display.print(myTZ.dateTime("d.m.Y"));
   display.setCursor(1, 21);
   display.print(myTZ.dateTime("H:i:s"));
-  display.showBuffer();
 }
+
 
 // **************************************************************
 void draw_clock()
